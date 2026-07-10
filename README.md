@@ -1,4 +1,4 @@
-# 🧠 Enterprise Codebase RAG Assistant
+# 🧠  Codebase RAG Assistant
 
 <div align="center">
 
