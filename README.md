@@ -1,102 +1,173 @@
-# 🧠 Codebase RAG Assistant
+# 🧠 Enterprise Codebase RAG Assistant
+
+<div align="center">
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![React](https://img.shields.io/badge/react-18.x-cyan)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-green)
+![React](https://img.shields.io/badge/react-18.x-61DAFB)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688)
+![LangChain](https://img.shields.io/badge/LangChain-LCEL-orange)
+![Pinecone](https://img.shields.io/badge/Pinecone-Vector%20DB-purple)
 
-A production-ready, full-stack Retrieval-Augmented Generation (RAG) assistant designed to ingest, search, and reason over entire GitHub repositories. By combining multi-query expansion, context reranking, and parent-document retrieval, this assistant provides highly accurate technical onboarding and codebase Q&A.
+**A production-ready, full-stack RAG assistant that ingests, searches, and reasons over any GitHub repository on demand.**
+
+</div>
+
+---
 
 ## 📸 Platform Previews
 
-### Dynamic Ingestion & Real-Time Logs
-*Paste any GitHub URL into the control panel to dynamically clone and index the repository. Watch the ingestion pipeline logs stream in real-time.*
-![Dynamic Ingestion & Real-Time Logs]<img width="1366" height="697" alt="Screenshot From 2026-07-09 10-02-16" src="https://github.com/user-attachments/assets/069e9df5-69d0-46c4-a776-fa2d17586f57" />
+### Dynamic Ingestion & Real-Time Pipeline Logs
+*Paste any public GitHub URL directly into the sidebar, hit "Trigger Ingestion", and watch the live pipeline logs stream in real-time as the backend clones, chunks, embeds, and indexes the codebase into Pinecone.*
 
+![Dynamic Ingestion & Real-Time Logs](Screenshot%20From%202026-07-09%2010-02-16.png)
 
-### Expert Codebase Q&A
-*Ask complex questions about the architecture, commit history, or specific implementation details. The assistant cites the exact source files it used.*
-![Expert Codebase Q&A]<img width="1366" height="697" alt="Screenshot From 2026-07-09 10-02-32" src="https://github.com/user-attachments/assets/7fef5494-9f4a-4c98-9831-13c3c4eb98c3" />
+### Expert-Level Codebase Q&A
+*Ask complex architectural questions about any indexed repository. The assistant generates precise, markdown-formatted answers and cites the exact source files it referenced.*
 
+![Expert Codebase Q&A](Screenshot%20From%202026-07-09%2010-02-32.png)
 
 ---
 
 ## ✨ Key Features
 
-- **Dynamic Repository Ingestion:** No need to hardcode URLs. Paste any public GitHub URL directly into the frontend UI, and the backend handles the rest (cloning, chunking, embedding, and indexing).
-- **Advanced Retrieval Pipeline:** 
-  - **Multi-Query Retriever:** Uses an LLM to generate multiple variants of a user's question to retrieve a broader set of relevant documents.
-  - **Cohere Reranking:** Re-ranks the retrieved chunks using Cohere's powerful reranking models to surface the absolute most relevant context.
-  - **Parent-Document Retrieval:** Fetches small, semantic chunks during vector search but feeds the *entire parent document* to the LLM to prevent context loss.
-- **Cloud & GPU Ready:** The backend is designed to run seamlessly on Google Colab (utilizing free T4 GPUs) for high-speed embeddings, exposing the API securely via Ngrok.
-- **Modern Technical Dashboard:** A sleek, dark-mode React interface featuring markdown rendering, isolated source citations, and real-time backend polling.
+| Feature | Description |
+|---|---|
+| 🔗 **Dynamic Repository Ingestion** | Paste any public GitHub URL in the UI — no `.env` edits required. The backend handles cloning, chunking, embedding, and indexing. |
+| 🔍 **Multi-Query Retrieval** | The LLM generates multiple query variants to cast a wider semantic net, improving recall from the vector store. |
+| 🏆 **Cohere Reranking** | Retrieved chunks are reranked by Cohere's cross-encoder for maximum relevance before being sent to the LLM. |
+| 📄 **Parent-Document Retrieval** | Searches on small, semantic child chunks but feeds the full parent document to the LLM — preventing context loss. |
+| ☁️ **Cloud & GPU Ready** | Run the backend on a free Google Colab T4 GPU and expose it via Ngrok. The notebook is included. |
+| 🌑 **Modern Dark UI** | Sleek React dashboard with real-time log streaming, markdown rendering, and source citations. |
 
-## 🏗️ Architecture
+---
 
-The system is split into three core layers:
+## 🏗️ System Architecture
 
-1. **Ingestion Engine (`ingest.py`)**: 
-   - Clones the target GitHub repo and wipes old clones automatically.
-   - Extracts all code source files and recent commit histories.
-   - Uses `RecursiveCharacterTextSplitter` to optimally chunk files.
-   - Embeds chunks using local HuggingFace embeddings (`all-mpnet-base-v2`).
-   - Upserts vectors to **Pinecone**, while storing full documents in a local `docstore.pkl` (with isolated namespaces per repository).
+```
+┌─────────────────────────────────────────────────────────────┐
+│                       React Frontend                         │
+│   (Vite + React, dynamic URL input, real-time log polling)   │
+└─────────────────────┬───────────────────────────────────────┘
+                      │  HTTP / REST
+┌─────────────────────▼───────────────────────────────────────┐
+│                  FastAPI Backend (api.py)                     │
+│    Async background ingestion │ LCEL chain assembly           │
+└──────┬────────────────────────────────────┬─────────────────┘
+       │                                    │
+┌──────▼──────────┐               ┌─────────▼────────────────┐
+│  ingest.py       │               │     rag_pipeline.py       │
+│                  │               │                           │
+│ • git clone/pull │               │ • HuggingFace Embeddings   │
+│ • File splitter  │               │ • Pinecone VectorStore     │
+│ • Commit history │               │ • MultiQueryRetriever      │
+│ • Pinecone upsert│               │ • Cohere Reranker         │
+│ • Docstore pkl   │               │ • Groq LLM (Llama 3.3)    │
+└──────────────────┘               └───────────────────────────┘
+```
 
-2. **FastAPI Backend (`api.py`)**:
-   - Manages asynchronous background ingestion tasks to keep the API responsive.
-   - Assembles the LangChain LCEL pipeline (`rag_pipeline.py`).
-   - Powered by **Groq (Llama 3.3 70B)** for lightning-fast inference.
-
-3. **React Frontend (`frontend-v2/App.jsx`)**:
-   - Built with Vite and React.
-   - Polls the backend for ingestion status and console logs.
-   - Manages the chat session and renders markdown responses beautifully.
+---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 - Python 3.10+
 - Node.js 18+
-- API Keys for Pinecone, Groq, and Cohere.
+- Free API keys for **[Pinecone](https://pinecone.io)**, **[Groq](https://groq.com)**, and **[Cohere](https://cohere.com)**
 
-### 1. Backend Setup (Local or Cloud)
-1. Copy `.env.example` to `.env` and fill in your keys.
-2. Install the backend dependencies:
-   ```bash
-   pip install -r requirements-api.txt
-   ```
-3. Run the FastAPI server:
-   ```bash
-   uvicorn api:app --host 0.0.0.0 --port 8000
-   ```
-   *(💡 **Pro Tip**: Use the provided `RAG_Ingestion_Colab.ipynb` to run the backend on a free Google Colab GPU and expose it via Ngrok!)*
+### Step 1 — Clone & Configure
 
-### 2. Frontend Setup
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-2. Install the dependencies:
-   ```bash
-   npm install
-   ```
-3. Create a `.env` file in the `frontend` folder and point it to your backend:
-   ```env
-   VITE_API_URL=http://localhost:8000
-   # Or your Ngrok URL if running on Colab
-   ```
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
+```bash
+git clone https://github.com/hamzasaqib80/codebase-rag-assistant.git
+cd codebase-rag-assistant
 
-## 🛠️ Built With
-- **LangChain** - Framework for developing LLM applications.
-- **Pinecone** - Vector Database for semantic search.
-- **Groq** - Ultra-fast LLM inference engine.
-- **Cohere** - State-of-the-art context reranking.
-- **Sentence-Transformers** - Local embeddings.
-- **FastAPI & React** - Core stack.
+# Copy the example env and fill in your API keys
+cp .env.example .env
+```
+
+Edit `.env` with your API keys:
+
+```env
+PINECONE_API_KEY=your_pinecone_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
+COHERE_API_KEY=your_cohere_api_key_here
+GITHUB_REPO_URL=https://github.com/any/repo.git   # Default repo to pre-index
+```
+
+### Step 2 — Backend Setup
+
+**Option A: Local (CPU)**
+```bash
+pip install -r requirements-api.txt
+uvicorn api:app --host 0.0.0.0 --port 8000
+```
+
+**Option B: Google Colab (Free T4 GPU) — Recommended**
+> 💡 Open `RAG_Ingestion_Colab.ipynb` in Google Colab, fill in your API keys, and run all cells. The notebook will start the FastAPI server and expose it via Ngrok automatically.
+
+### Step 3 — Frontend Setup
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Create frontend environment file
+echo "VITE_API_URL=http://localhost:8000" > .env
+# (Replace with your Ngrok URL if using Colab)
+
+# Start the dev server
+npm run dev
+```
+
+Open **[http://localhost:5173](http://localhost:5173)** in your browser.
+
+### Step 4 — Index a Repository
+
+1. Paste a GitHub URL in the sidebar input field (e.g. `https://github.com/psf/requests.git`).
+2. Click **"Trigger Ingestion"**.
+3. Watch the live pipeline logs as the repository is indexed.
+4. Once complete, start asking questions in the chat!
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **LLM** | Groq — Llama 3.3 70B (ultra-fast inference) |
+| **Vector DB** | Pinecone (serverless) |
+| **Embeddings** | `sentence-transformers/all-mpnet-base-v2` (local, no API cost) |
+| **Reranker** | Cohere Rerank v3 |
+| **Framework** | LangChain LCEL |
+| **Backend** | FastAPI + Uvicorn |
+| **Frontend** | React 18, Vite |
+| **Cloud Hosting** | Google Colab + Ngrok |
+
+---
+
+## 📁 Project Structure
+
+```
+codebase-rag-assistant/
+├── api.py                     # FastAPI backend — ingestion & query endpoints
+├── ingest.py                  # Full ingestion pipeline (clone → chunk → embed → upsert)
+├── rag_pipeline.py            # LangChain LCEL chain assembly
+├── retrievers.py              # Custom ParentFetchingRetriever implementation
+├── utils.py                   # Shared logging utilities
+├── query.py                   # Standalone CLI query script
+├── requirements-api.txt       # Backend Python dependencies
+├── RAG_Ingestion_Colab.ipynb  # Google Colab notebook for cloud deployment
+├── .env.example               # Environment variable template
+└── frontend/                  # React + Vite frontend
+    ├── src/
+    │   └── App.jsx            # Main UI component
+    └── package.json
+```
+
+---
 
 ## 📄 License
-This project is licensed under the MIT License.
+
+This project is licensed under the **MIT License**.

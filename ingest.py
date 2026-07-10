@@ -25,8 +25,8 @@ from typing import List, Optional, Tuple
 import git
 from dotenv import load_dotenv
 from langchain_core.documents import Document
-from langchain_cohere import CohereEmbeddings
 from langchain_core.stores import InMemoryStore
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 
@@ -49,10 +49,12 @@ GITHUB_REPO_URL: str = os.getenv("GITHUB_REPO_URL", "")
 CLONE_DIR: str = os.getenv("CLONE_DIR", "./cloned_repo")
 DOCSTORE_PATH: str = "docstore.pkl"
 
-# We will use Cohere embeddings which output 1024 dimensions for v3
-EMBEDDING_DIMENSION: int = 1024
+# Local embedding model — no API key required.
+# all-mpnet-base-v2 outputs 768-dimensional vectors (matches Pinecone index).
+HF_EMBED_MODEL: str = "sentence-transformers/all-mpnet-base-v2"
+
+EMBEDDING_DIMENSION: int = 768  # text-embedding-004 output dimension
 EMBEDDING_METRIC: str = "cosine"
-COHERE_EMBED_MODEL: str = "embed-english-v3.0"
 BATCH_SIZE: int = 50
 MAX_COMMITS: int = 100
 MAX_COMMIT_FILES: int = 10
@@ -350,19 +352,22 @@ def _ensure_pinecone_index(pc: Pinecone, index_name: str) -> None:
 
 
 @retry_on_failure(max_retries=3, delay=2, backoff=2)
-def _build_embeddings() -> CohereEmbeddings:
+def _build_embeddings() -> HuggingFaceEmbeddings:
     """
-    Load the Cohere embedding model to run lightweight in the cloud.
+    Load the local sentence-transformers model.
+    First call downloads ~420 MB to ~/.cache/huggingface/hub (one-time only).
+    Subsequent calls load from local cache instantly.
     """
-    logger.info("Loading Cohere embedding model '%s' …", COHERE_EMBED_MODEL)
-    return CohereEmbeddings(
-        model=COHERE_EMBED_MODEL,
-        cohere_api_key=os.getenv("COHERE_API_KEY")
+    logger.info("Loading local embedding model '%s' …", HF_EMBED_MODEL)
+    return HuggingFaceEmbeddings(
+        model_name=HF_EMBED_MODEL,
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True},
     )
 
 
 @retry_on_failure(max_retries=3, delay=2, backoff=2)
-def _build_vectorstore(embeddings: CohereEmbeddings) -> PineconeVectorStore:
+def _build_vectorstore(embeddings: HuggingFaceEmbeddings) -> PineconeVectorStore:
     """
     Construct PineconeVectorStore with text_key='page_content' to align with
     LangChain Document field naming (pitfall #2).

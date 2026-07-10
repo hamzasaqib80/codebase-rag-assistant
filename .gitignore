@@ -1,28 +1,32 @@
-# Environments
+# Environment secrets — NEVER commit these
 .env
-.venv
-.venv2
-.venv3
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
 
-# Byte-compiled / optimized / DLL files
+# Python bytecode
 __pycache__/
 *.py[cod]
-*$py.class
+*.pyo
+*.pyd
 
-# Local vector store cache
-docstore.pkl
+# Virtual environments
+.venv/
+.venv2/
+.venv3/
+venv/
+env/
 
-# Cloned repositories
+# Cloned repositories (large, re-generated on run)
 cloned_repo/
 
-# Frontend
+# Docstore (large binary, re-generated on ingestion)
+docstore.pkl
+
+# Node.js
 frontend/node_modules/
 frontend/dist/
-frontend/.env
-frontend/.env.local
-frontend/.DS_Store
+node_modules/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

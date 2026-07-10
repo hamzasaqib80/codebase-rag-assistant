@@ -25,7 +25,7 @@ from langchain.retrievers import ContextualCompressionRetriever, MultiQueryRetri
 from langchain_cohere import CohereRerank
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.stores import InMemoryStore
-from langchain_cohere import CohereEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
 from langchain_pinecone import PineconeVectorStore
 
@@ -48,6 +48,8 @@ GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 COHERE_API_KEY: str = os.getenv("COHERE_API_KEY", "")
 DOCSTORE_PATH: str = "docstore.pkl"
 
+# Local embedding model — same as ingest.py (768 dims, no API key required).
+HF_EMBED_MODEL: str = "sentence-transformers/all-mpnet-base-v2"
 
 PARENT_FETCH_K: int = 20       # child chunks retrieved per sub-query
 COHERE_TOP_N: int = 5          # documents kept after Cohere rerank
@@ -58,16 +60,21 @@ COHERE_TOP_N: int = 5          # documents kept after Cohere rerank
 # ---------------------------------------------------------------------------
 
 @retry_on_failure(max_retries=3, delay=2, backoff=2)
-def _build_embeddings() -> CohereEmbeddings:
-    logger.info("Loading Cohere embeddings …")
-    return CohereEmbeddings(
-        model="embed-english-v3.0",
-        cohere_api_key=COHERE_API_KEY
+def _build_embeddings() -> HuggingFaceEmbeddings:
+    """
+    Load the local sentence-transformers model (downloads once to ~/.cache).
+    Must be identical to ingest.py so query vectors live in the same space.
+    """
+    logger.info("Loading local embedding model '%s' …", HF_EMBED_MODEL)
+    return HuggingFaceEmbeddings(
+        model_name=HF_EMBED_MODEL,
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True},
     )
 
 
 @retry_on_failure(max_retries=3, delay=2, backoff=2)
-def _build_vectorstore(embeddings: CohereEmbeddings) -> PineconeVectorStore:
+def _build_vectorstore(embeddings: HuggingFaceEmbeddings) -> PineconeVectorStore:
     """
     Connect to the existing Pinecone index.
     `text_key="page_content"` is mandatory (pitfall #2) — without it, Pinecone
