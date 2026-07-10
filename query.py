@@ -29,7 +29,7 @@ logger = setup_logging()
 BANNER = """
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║        Enterprise Codebase Onboarding & Q&A Assistant                   ║
-║        Powered by: Pinecone · Google Embeddings · Groq · Cohere Rerank  ║
+║        Powered by: Pinecone · Local Embeddings · Groq · Cohere Rerank   ║
 ╠══════════════════════════════════════════════════════════════════════════╣
 ║  Ask any question about the indexed repository — code structure,         ║
 ║  function behaviour, architecture decisions, or commit history.          ║
