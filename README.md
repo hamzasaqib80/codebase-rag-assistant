@@ -11,11 +11,13 @@ A production-ready, full-stack Retrieval-Augmented Generation (RAG) assistant de
 
 ### Dynamic Ingestion & Real-Time Logs
 *Paste any GitHub URL into the control panel to dynamically clone and index the repository. Watch the ingestion pipeline logs stream in real-time.*
-![Dynamic Ingestion & Real-Time Logs](Screenshot\ (87).png)
+![Dynamic Ingestion & Real-Time Logs]<img width="1366" height="697" alt="Screenshot From 2026-07-09 10-02-16" src="https://github.com/user-attachments/assets/069e9df5-69d0-46c4-a776-fa2d17586f57" />
+
 
 ### Expert Codebase Q&A
 *Ask complex questions about the architecture, commit history, or specific implementation details. The assistant cites the exact source files it used.*
-![Expert Codebase Q&A](Screenshot\ (88).png)
+![Expert Codebase Q&A]<img width="1366" height="697" alt="Screenshot From 2026-07-09 10-02-32" src="https://github.com/user-attachments/assets/7fef5494-9f4a-4c98-9831-13c3c4eb98c3" />
+
 
 ---
 
